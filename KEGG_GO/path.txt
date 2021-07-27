@@ -1,0 +1,4 @@
+ko:K04524	path:map04979
+ko:K04524	path:ko04979
+ko:K04524	path:map05010
+ko:K04524	path:ko05010
