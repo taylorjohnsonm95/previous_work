@@ -1,0 +1,153 @@
+
+Alpha/Beta hydrolase fold
+Anion-transporting ATPase-like domain
+Ankyrin repeat
+Ankyrin repeat-containing domain
+Ankyrin repeat-containing domain superfamily
+Armadillo-type fold
+Arsenical pump ATPase, ArsA/GET3
+ATPase, AAA-type, conserved site
+ATPase, AAA-type, core
+Brix domain
+C2 domain
+C2 domain superfamily
+Carboxylesterase, type B
+CECR6/TMEM121 family
+Centrosomal protein of 19kDa
+Class II aldolase/adducin N-terminal domain superfamily
+Clathrin, heavy chain/VPS, 7-fold repeat
+Coagulation factor 5/8 C-terminal domain
+Concanavalin A-like lectin/glucanase domain superfamily
+Copine
+Copine, C2B domain
+C-type lectin, conserved site
+C-type lectin fold
+C-type lectin-like
+C-type lectin-like/link domain superfamily
+DNA2/NAM7 helicase, AAA domain
+Domain of unknown function DUF4456
+FAD/NAD(P)-binding domain superfamily
+Ferlin, fifth C2 domain
+Ferredoxin-NADP reductase (FNR), nucleotide-binding domain
+Fibronectin type III
+Fibronectin type III superfamily
+Formin, FH2 domain
+F/V-ATP synthase subunit C superfamily
+Galactose-binding-like domain superfamily
+Glutaredoxin
+Glutaredoxin, PICOT-like
+Glutathione S-transferase, C-terminal domain superfamily
+Glutathione S-transferase, C-terminal-like
+Glutathione S-transferase, N-terminal
+Glycine cleavage system P protein
+Glycosyltransferase 2-like
+G-patch domain
+High mobility group box domain
+High mobility group box domain superfamily
+Histone-fold
+Histone H2A/H2B/H3
+Histone H2B
+HRDC-like superfamily
+Immunoglobulin I-set
+Immunoglobulin-like domain
+Immunoglobulin-like domain superfamily
+Immunoglobulin-like fold
+Immunoglobulin subtype
+Immunoglobulin subtype 2
+Kazal domain
+Kazal domain superfamily
+K homology domain-like, alpha/beta
+K homology domain superfamily, prokaryotic type
+K Homology domain, type 2
+LEM domain
+LEM/LEM-like domain superfamily
+Lipid transport protein, beta-sheet shell
+Major facilitator superfamily domain
+MAM domain
+MFS transporter superfamily
+Myosin tail
+NADH dehydrogenase [ubiquinone] 1 beta subcomplex subunit 8
+NADH-quinone oxidoreductase subunit E-like
+NHL repeat
+NHL repeat, subgroup
+NTF2-like domain superfamily
+Nuclear transport factor 2
+Nuclear transport factor 2, eukaryote
+Nucleotide-binding alpha-beta plait domain superfamily
+Nucleotide-diphospho-sugar transferases
+Oxoglutarate/iron-dependent dioxygenase
+P-loop containing nucleoside triphosphate hydrolase
+Prolyl 4-hydroxylase, alpha subunit
+Protein ASX-like, PHD domain
+Protein kinase, ATP binding site
+Protein kinase domain
+Protein kinase-like domain superfamily
+Protein of unknown function DUF2452
+Protein of unknown function DUF4419
+Proton-dependent oligopeptide transporter family
+Pyridoxal phosphate-dependent transferase
+Pyridoxal phosphate-dependent transferase, major domain
+Ras GTPase-activating domain
+Ras GTPase-activating protein, conserved site
+Rho GTPase activation protein
+Ribosomal protein L23/L15e core domain superfamily
+Ribosomal protein L9, bacteria/chloroplast
+Ribosomal protein L9, C-terminal domain superfamily
+Ribosomal protein L9, N-terminal
+Ribosomal protein L9, N-terminal domain superfamily
+Ribosomal protein L9/RNase H1, N-terminal
+Ribosomal protein S24e
+Ribosomal protein S3, C-terminal
+Ribosomal protein S3, C-terminal domain superfamily
+Ribosomal protein S3, eukaryotic/archaeal
+Ribosomal S24e conserved site
+RNA-binding domain superfamily
+RNA guanine-N7 methyltransferase activating subunit
+RNA polymerase Rpb4/RPC9, core
+RNA polymerase subunit RPB4/RPC9
+RNA recognition motif domain
+Rpb4/RPC9 superfamily
+Serine/threonine-protein kinase, active site
+Six-bladed beta-propeller, TolB-like
+SNU66/SART1 family
+Splicing factor, SPF45
+TauD/TfdA-like domain
+Tetratricopeptide-like helical domain superfamily
+Tetratricopeptide repeat
+Thioredoxin domain
+Thioredoxin-like superfamily
+Transcription factor IIA, beta-barrel
+Transcription factor IIA, helical
+Transcription initiation factor IIA, gamma subunit
+Transcription initiation factor IIA, gamma subunit, C-terminal
+Transcription initiation factor IIA, gamma subunit, N-terminal
+Transketolase, C-terminal domain
+Transketolase C-terminal/Pyruvate-ferredoxin oxidoreductase domain II
+Translation initiation factor IF- 2, domain 3
+Translation initiation factor IF-2, domain 3 superfamily
+Tyrosine-protein kinase ephrin type A/B receptor-like
+Ubiquitin
+Ubiquitin-conjugating enzyme, active site
+Ubiquitin-conjugating enzyme E2
+Ubiquitin-conjugating enzyme/RWD-like
+Ubiquitin conjugation factor E4, core
+Ubiquitin domain
+Ubiquitin-like domain superfamily
+U box domain
+V-ATPase proteolipid subunit
+V-ATPase proteolipid subunit C-like domain
+Vitellinogen, open beta-sheet
+von Willebrand factor A-like domain superfamily
+von Willebrand factor, type A
+Vps16, C-terminal
+Vps16, C-terminal domain superfamily
+VWFC domain
+WD40 repeat
+WD40 repeat, conserved site
+WD40-repeat-containing domain
+WD40-repeat-containing domain superfamily
+WD40/YVTN repeat-like-containing domain superfamily
+Zinc finger C2H2 superfamily
+Zinc finger C2H2-type
+Zinc finger, MYND-type
+Zinc finger, RING/FYVE/PHD-type

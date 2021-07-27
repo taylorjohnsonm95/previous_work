@@ -1,0 +1,29 @@
+03/12/2019 16:48:41:387 Welcome to InterProScan-5.33-72.0
+03/12/2019 16:48:47:745 Running InterProScan v5 in STANDALONE mode... on Linux
+03/12/2019 16:49:02:138 Loading file /home/johnson.ta/BINF6308/ProteinClassification/proteins.fasta
+03/12/2019 16:49:02:141 Running the following analyses:
+[CDD-3.16,Coils-2.2.1,Gene3D-4.2.0,Hamap-2018_03,MobiDBLite-2.0,Pfam-32.0,PIRSF-3.02,PRINTS-42.0,ProDom-2006.1,ProSitePatterns-2018_02,ProSiteProfiles-2018_02,SFLD-4,SMART-7.1,SUPERFAMILY-1.75,TIGRFAM-15.0]
+Available matches will be retrieved from the pre-calculated match lookup service.
+
+Matches for any sequences that are not represented in the lookup service will be calculated locally.
+2019-12-03 16:49:02,699 [amqEmbeddedWorkerJmsContainer-1] [uk.ac.ebi.interpro.scan.business.sequence.BerkeleyPrecalculatedProteinLookup:410] WARN - 
+
+The version of InterProScan you are using is 5.33-72.0
+The version of the lookup service you are using is 5.39-77.0
+As the data in these versions is not the same, you cannot use this match lookup service.
+InterProScan will now run locally
+If you would like to use the match lookup service, you have the following options:
+i) Download the newest version of InterProScan5 from our FTP site by following the instructions on:
+   https://www.ebi.ac.uk/interpro/interproscan.html
+ii) Download the match lookup service for your version of InterProScan from our FTP site and install it locally.
+    You will then need to edit the following property in your configuration file to point to your local installation:
+    precalculated.match.lookup.service.url=
+
+In the meantime, the analysis will continue to run locally.
+
+
+03/12/2019 16:49:19:293 25% completed
+03/12/2019 16:50:09:665 50% completed
+03/12/2019 16:51:32:202 75% completed
+03/12/2019 16:52:17:305 90% completed
+03/12/2019 16:52:30:902 100% done:  InterProScan analyses completed
