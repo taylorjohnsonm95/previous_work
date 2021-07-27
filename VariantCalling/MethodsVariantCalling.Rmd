@@ -1,0 +1,56 @@
+---
+author: Taylor
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    dev: 'svg'
+  md_document:
+    variant: gfm
+bibliography: bibliography.ris 
+---
+
+# Title
+
+Variant Calling 
+
+# Scripts
+
+## getGenome.sh
+
+Retrieves the reference genome from database
+
+## getReads.sh
+
+Retrieves NGS reads used in comparison paper
+
+## trimReads.sh
+
+Quality trims the reads using Trimmomatic
+
+## indexGenome.sh
+
+Indexes the genome for use by BWA
+
+## alignReads.sh
+
+Aligns the reads using bwa mem
+
+## sort.sh
+
+Sorts the file created by bwa mem to a sorted bam
+
+## indexReads.sh
+
+Creates an index for reads
+
+## runDeepVariant.sh
+
+Produces a VCF file using DeepVariant 
+
+# Methods
+
+Variant calling is a process to identify variants from sequence data. The first step to find variation is to trim NGS reads based on quality using the program Trimmomatic [@Bolger]. The trimmed reads from an individual are then aligned against the indexed reference genome using BWA [@Li]. The alignments are analyzed using a variant calling program such as Genome Analysis Tool Kil [@McKenna] or DeepVariant [@Supernat] 
+
+# Refereneces
