@@ -1,0 +1,647 @@
+---
+title: "Practicum 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caret)
+library(klaR)
+library(InformationValue)
+library(psych)
+library(rpart)
+```
+
+
+## Problem 1 (50 pts)
+### 1
+(0 pts) Download the data set Census Income Data for Adults along with its explanation (Links to an external site.). There are two data sets (adult.data and adult.test). Note that the data file does not contain header names; you may wish to add those. The description of each column can be found in the data set explanation. Combine the two data sets into a single data set.
+```{r}
+adult_data <- read.csv("/Users/taylorjohnson/Downloads/adult.data")
+adult_test <- read.csv("/Users/taylorjohnson/Downloads/adult.test", skip = 1)
+names <- c("age", "workclass", "fnlwgt", "education", "education_num", "marital_status", "occupation", "relationship", "race", "sex", "capital_gain", "capital_loss", "hours_per_week", "native_country", "income")
+
+#Change column names 
+colnames(adult_data) <- names
+colnames(adult_test) <- names
+
+#remove period in income columns 
+adult_test <- adult_test %>%
+  mutate(income = str_replace(income, "\\.", ""))
+```
+
+```{r}
+#combine datasets 
+adult_data_c <- rbind(adult_data, adult_test) %>%
+  mutate(income = str_replace(income, ">", "greater than ")) %>%
+  mutate(income = str_replace(income, "<=", "less than or equal to "))
+
+#remove unknowns
+adult_data_c <- data.frame(lapply(adult_data_c, function(x) {gsub("\\?", NA, x)  }))
+adult_data_c <- adult_data_c %>%
+  na.omit(.)
+```
+
+
+### 2
+(0 pts) Explore the combined data set as you see fit and that allows you to get a sense of the data and get comfortable with it. 
+```{r}
+str(adult_data_c)
+```
+
+
+### 3
+(5 pts) Split the combined data set 70/30% so you retain 30% for validation and tuning using random sampling with replacement. Use a fixed seed so you produce the same results each time you run the code. Going forward you will use the 70% data set for training and the 30% data set for validation and determine accuracy.
+```{r}
+set.seed(123)
+
+adult_data_c$income <- as.factor(adult_data_c$income)
+trainIndex <- createDataPartition(adult_data_c$income, p = .70,
+                                  list = FALSE,
+                                  times = 1)
+Train<- adult_data_c[trainIndex,]
+Val <- adult_data_c[-trainIndex,]
+```
+
+```{r}
+table(Train$income)
+table(Val$income)
+```
+
+```{r}
+prop.table(table(Train$income))
+prop.table(table(Val$income))
+```
+
+proportions are similar
+
+
+### 4
+(8 pts) Using the Naive Bayes Classification algorithm from the KlaR package, build a binary classifier that predicts whether an individual earns more than or less than US$50,000. Only use the features age, education, workclass, sex, race, and native-country. Ignore any other features in your model. You need to transform continuous variables into categorical variables by binning (use equal size bins from min to max).
+```{r}
+#Select features and make bins for age
+Train$age <- as.numeric(Train$age)
+train_data <- Train %>%
+  dplyr::select(age, education, workclass, sex, race, native_country, income) %>%
+  mutate(age = if_else(age > 37, "Adult", "Younger Adults")) %>%
+  mutate_all(as.factor)
+
+Val$age <- as.numeric(Val$age)
+val_data <- Val %>%
+  dplyr::select(age, education, workclass, sex, race, native_country, income) %>%
+  mutate(age = if_else(age > 37, "Adult", "Younger Adults")) %>%
+  mutate_all(as.factor)
+```
+
+```{r}
+prop.table(table(train_data$age))
+prop.table(table(val_data$age))
+```
+
+
+```{r}
+# run Naive Bayes function 
+nbmodel <- NaiveBayes(income~age+education+workclass+sex+race+native_country, data=train_data)
+```
+
+```{r, warning=FALSE}
+# check the accuracy
+prediction <- predict(nbmodel, val_data)
+```
+
+
+### 5
+(2 pts) Build a confusion matrix for the classifier from (4) and comment on it, e.g., explain what it means.
+```{r}
+caret::confusionMatrix(prediction$class, val_data$income)
+```
+
+The accuracy is about 77%. The sensitivity is pretty low and specificity relatively high. 
+
+
+### 6
+(8 pts) Create a full logistic regression model of the same features as in (4) (i.e., do not eliminate any features regardless of p-value). Be sure to either use dummy coding for categorical features or convert them to factor variables and ensure that the glm function does the dummy coding.
+```{r}
+#select fetures and convert characters to integers
+train_data_lr <- Train %>%
+  dplyr::select(age, education, workclass, sex, race, native_country, income) %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate_if(is.factor, as.integer)
+
+val_data_lr <- Val %>%
+  dplyr::select(age, education, workclass, sex, race, native_country, income) %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate_if(is.factor, as.integer)
+```
+
+```{r}
+#convert income to factor
+train_data_lr$income <- as.factor(train_data_lr$income)
+val_data_lr$income <- as.factor(val_data_lr$income)
+#create model
+reg_model <- glm(income ~ age+education+workclass+sex+race+native_country, data=train_data_lr, family=binomial(link="logit"))
+summary(reg_model)
+```
+
+```{r}
+# check the accuracy
+prediction_lr <- predict(reg_model, newdata = val_data_lr, type = "response")
+prediction_lr<-factor(ifelse(prediction_lr<0.5, 1, 2))
+head(prediction_lr)
+```
+
+
+### 7
+(2 pts) Build a confusion matrix for the classifier from (6) and comment on it, e.g., explain what it means.
+```{r}
+caret::confusionMatrix(prediction_lr, val_data_lr$income)
+```
+
+The accuracy is a little bit lower than the naive bayes model. The sensitivity is terrible and specificity is very high
+
+
+### 8
+(8 pts) Create a Decision Tree model from rpart package, build a classifier that predicts whether an individual earns more than or less than US$50,000. Use the same features as (4). Make sure to transform categorical variables.
+```{r}
+tree_model <- rpart(income~age+education+workclass+sex+race+native_country, data=train_data_lr, method="class")
+print(tree_model)
+```
+
+```{r}
+tree_predict <-  predict(tree_model, val_data_lr, type="class")
+head(tree_predict)
+```
+
+
+
+### 9
+(2 pts) Build a confusion matrix for the classifier from (8) and comment on it, e.g., explain what it means.
+```{r}
+caret::confusionMatrix(tree_predict, val_data_lr$income)
+```
+
+The accuracy is about 79.5% and is greater than the naive bayes and logistic regression model. The sensitivity is higher than other models but is still low. The sensitivity is lower than the other two models. 
+
+
+### 10
+(10 pts) Build a function called predictEarningsClass() that predicts whether an individual makes more or less than US$50,000 and that combines the three predictive models from (4), (6), and (8) into a simple ensemble. If all three models disagree on a prediction, then the prediction should be the one from the model with the higher accuracy -- make sure you do not hard code that as the training data may change over time and the same model may not be the more accurate forever.
+```{r, warning=FALSE}
+predictEarningsClass <- function(training_data, validation_data, testing_data){
+    set.seed(123)
+    #Naive Bayes
+    nbmodel <- NaiveBayes(income~age+education+workclass+sex+race+native_country, data=training_data)
+    #test data prediction
+    nb_prediction <- predict(nbmodel, testing_data)
+    nb_prediction <- as.integer(as.factor(nb_prediction$class))
+    #validation prediction
+    nb_val_prediction <- predict(nbmodel, validation_data)
+    cm <- caret::confusionMatrix(nb_val_prediction$class, validation_data$income)
+    nb_acc <- as.numeric(cm$overall[1])
+    
+    #convert data to numeric
+    row_training <- nrow(training_data)
+    training_data_b <- rbind(training_data, testing_data)
+    train_data_c <- training_data_b %>%
+    dplyr::select(age, education, workclass, sex, race, native_country, income) %>%
+    mutate_if(is.character, as.factor) %>%
+    mutate_if(is.factor, as.integer)
+    training_data_c<- train_data_c[1:nrow(training_data), ]
+    test_data_c <- train_data_c[row_training+1:nrow(train_data_c), ]
+    test_data_c <- test_data_c %>% drop_na(age)
+
+    val_data_c <- validation_data %>%
+    dplyr::select(age, education, workclass, sex, race, native_country, income) %>%
+    mutate_if(is.character, as.factor) %>%
+    mutate_if(is.factor, as.integer)
+  
+   training_data_c$income <- as.factor(training_data_c$income)
+   test_data_c$income <- as.factor(test_data_c$income)
+   val_data_c$income <- as.factor(val_data_c$income)
+   
+   #binary logistic regression
+   reg_model <- glm(income ~ age+education+workclass+sex+race+native_country, data=training_data_c, family=binomial(link="logit"))
+   #test data prediction
+   prediction_lr <- predict(reg_model, newdata = test_data_c, type = "response")
+   lr_prediction<-factor(ifelse(prediction_lr<0.5, 1, 2))
+   lr_prediction <- as.integer(lr_prediction)
+   #validation data prediction
+   prediction_lr_val <- predict(reg_model, newdata = val_data_c, type = "response")
+   lr_val_prediction<-factor(ifelse(prediction_lr_val<0.5, 1, 2))
+   cm <- caret::confusionMatrix(lr_val_prediction, val_data_c$income)
+   lr_acc <- as.numeric(cm$overall[1])
+   
+   
+   #decision tree
+   tree_model <- rpart(income~age+education+workclass+sex+race+native_country, data=training_data_c, method="class")
+   #test data prediction
+   tree_prediction <-  predict(tree_model, test_data_c, type="class")
+   tree_prediction <- as.integer(tree_prediction)
+   #validation data predicition
+   tree_prediction_val <-  predict(tree_model, val_data_c, type="class")
+   cm <- caret::confusionMatrix(tree_prediction_val, val_data_c$income)
+   tree_acc <- as.numeric(cm$overall[1])
+   
+   #accuracy of all three models
+   accuracy <- data.frame(nb_acc, lr_acc, tree_acc)
+  
+  nb_lr <- nb_prediction == lr_prediction
+  lr_tree <- lr_prediction == tree_prediction
+  nb_tree <- nb_prediction == tree_prediction
+  pred <- nb_lr == lr_tree
+  pred <- lr_tree == nb_tree
+  for (i in pred) {
+    final_prediction = c()
+    if (i == TRUE){
+      prediction <- nb_prediction
+      final_prediction <- c(final_prediction, prediction)
+   }else {
+       if (max(accuracy) == tree_acc){
+           prediction <- tree_prediction
+           final_prediction <- c(final_prediction, prediction)
+           }
+       if (max(accuracy) == nb_acc){
+           prediction <- nb_prediction
+           final_prediction <- c(final_prediction, prediction)
+           }
+       if (max(accuracy) == lr_acc){
+           prediction <- lr_prediction
+           final_prediction <- c(final_prediction, prediction)
+           }
+          }
+        }
+      final_prediction
+}
+```
+
+```{r, warning=FALSE}
+prediction_final <- predictEarningsClass(train_data, val_data, val_data)
+head(prediction_final)
+```
+
+```{r}
+caret::confusionMatrix(as.factor(prediction_final),val_data_lr$income)
+```
+
+
+### 11
+(5 pts) Using the ensemble model from (10), predict whether a 47-year-old black female adult who is a local government worker with a Bachelor's degree who immigrated from Honduras earns more or less than US$50,000. 
+```{r}
+age <- "Adult"
+education <- "Bachelors"
+workclass <- "Local-gov"
+sex <- "Female"
+race <- "Black"
+native_country <- "Honduras"
+income <- NA
+test <- data.frame(age, education, workclass, sex, race, native_country, income)
+```
+
+```{r, warning=FALSE}
+prediction_final_test <- predictEarningsClass(train_data, val_data, test)
+prediction_final_test
+```
+
+
+
+## Problem 2 (50 pts)
+
+### 1
+(0 pts) Load and then explore this data set on car sales   download  into a dataframe called cars.df. Exclude name (manufacturer and model) from the data -- do not use in any of the modeling going forward.
+```{r}
+cars.df <- read.csv("/Users/taylorjohnson/Downloads/CarDataSet.csv")
+cars.df <- cars.df[,-1]
+str(cars.df)
+```
+
+
+### 2
+(3 pts) Are there outliers in any one of the features in the data set? How do you identify outliers? Remove them but create a second data set with outliers removed called cars.no.df. Keep the original data set cars.df.
+```{r}
+par(mfrow = c(1, 2))
+hist(cars.df$selling_price)
+hist(cars.df$km_driven)
+```
+
+From the plots we can see that there are some outliers
+
+```{r}
+#check outliers for numeric data 
+selling_price_o <- abs((mean(cars.df$selling_price) - cars.df$selling_price)/sd(cars.df$selling_price))
+selling_price_outliers <- cars.df[which(selling_price_o > 1.5), ]
+
+km_driven_o <- abs((mean(cars.df$km_driven) - cars.df$km_driven)/sd(cars.df$km_driven))
+km_driven_outliers <- cars.df[which(km_driven_o > 1.5), ]
+
+nrow(selling_price_outliers)
+nrow(km_driven_outliers)
+
+outliers <- rbind(selling_price_outliers, km_driven_outliers)
+```
+
+The selling price column has 194 outliers and km driven has 233 outliers.
+
+```{r}
+#data with outliers removed
+cars.no.df <- anti_join(cars.df, outliers)
+```
+
+
+### 3
+(4 pts) Using pairs.panel, what are the distributions of each of the features in the data set with outliers removed (cars.no.df)? Are they reasonably normal so you can apply a statistical learner such as regression? Can you normalize features through a log, inverse, or square-root transform? State which features should be transformed and then transform as needed and build a new data set, cars.tx.
+```{r, fig.height=8, fig.width=8}
+pairs.panels(cars.no.df)
+```
+
+```{r}
+par(mfrow = c(1, 2))
+hist(log(cars.no.df$selling_price))
+hist(sqrt(cars.no.df$km_driven))
+```
+
+```{r}
+cars.tx <- cars.no.df
+cars.tx$selling_price <- log(cars.tx$selling_price)
+cars.tx$km_driven <- sqrt(cars.tx$km_driven)
+```
+
+The selling price was log transformed and km_driven was sqrt transformed so that the data looks reasonably normal. 
+
+
+### 4
+(3 pts) What are the correlations to the response variable (km_driven) for cars.no.df? Are there collinearities? Build a full correlation matrix.
+```{r}
+cars.no.df <- cars.no.df %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate_if(is.factor, as.integer)
+cor(cars.no.df)
+```
+
+Year has a high correlation with selling_price and km_driven which may cause collinearity. 
+
+
+### 5
+(5 pts) Split each of the three data sets, cars.no.df, cars.df, and cars.tx 75%/25% so you retain 25% for testing using random sampling without replacement. Call the data sets, cars.training and cars.testing, cars.no.training and cars.no.testing, and cars.tx.training and cars.tx.testing.
+```{r}
+set.seed(123)
+#partition cars.df
+cars.df <- cars.df %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate_if(is.factor, as.integer)
+trainIndex <- createDataPartition(cars.df$km_driven, p = .75,
+                                  list = FALSE,
+                                  times = 1)
+cars.training<- cars.df[trainIndex,]
+cars.testing <- cars.df[-trainIndex,]
+```
+
+```{r}
+#partition cars.no.df
+trainIndex <- createDataPartition(cars.no.df$km_driven, p = .75,
+                                  list = FALSE,
+                                  times = 1)
+cars.no.training<- cars.no.df[trainIndex,]
+cars.no.testing <- cars.no.df[-trainIndex,]
+```
+
+```{r}
+#partition cars.tx
+cars.tx <- cars.tx %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate_if(is.factor, as.integer)
+trainIndex <- createDataPartition(cars.tx$km_driven, p = .75,
+                                  list = FALSE,
+                                  times = 1)
+cars.tx.training<- cars.tx[trainIndex,]
+cars.tx.testing <- cars.tx[-trainIndex,]
+```
+
+
+### 6
+(10 pts) Build three ideal multiple regression models for cars.training, cars.no.training, and cars.tx.training using backward elimination based on p-value for predicting km_driven.
+```{r}
+#linear regression cars.df
+model.cars.df <- lm(km_driven ~year+selling_price+fuel+seller_type+transmission+owner, data = cars.training)
+summary(model.cars.df)
+```
+
+```{r}
+#remove transmission
+model.cars.df <- lm(km_driven ~year+selling_price+fuel+seller_type+owner, data = cars.training)
+summary(model.cars.df)
+```
+
+```{r}
+#regression cars.no.df
+model.cars.no.df <- lm(km_driven ~year+selling_price+fuel+seller_type+transmission+owner, data = cars.no.training)
+summary(model.cars.no.df)
+```
+
+```{r}
+#remove transmission 
+model.cars.no.df <- lm(km_driven ~year+selling_price+fuel+seller_type+owner, data = cars.no.training)
+summary(model.cars.no.df)
+```
+
+
+```{r}
+#regression cars.tx
+model.cars.tx <- lm(km_driven ~year+selling_price+fuel+seller_type+transmission+owner, data = cars.tx.training)
+summary(model.cars.tx)
+```
+
+```{r}
+#remove transmission
+model.cars.tx <- lm(km_driven ~year+selling_price+fuel+seller_type+owner, data = cars.tx.training)
+summary(model.cars.tx)
+```
+
+
+### 7
+(5 pts) Build a Regression Tree model using rpart package for predicting km_driven: one with cars.training, one with cars.no.training, and one with cars.tx.training, i.e., regression models that contains all features.
+```{r}
+#cars.training
+cars.training.tree <- rpart(km_driven ~ year+selling_price+fuel+seller_type+transmission+owner, data = cars.training)
+cars.training.tree.pred <- predict(cars.training.tree, cars.testing)
+head(as.numeric(cars.training.tree.pred))
+head(cars.testing$km_driven)
+```
+
+```{r}
+#cars.no.training
+cars.no.training.tree <- rpart(km_driven ~ year+selling_price+fuel+seller_type+transmission+owner, data = cars.no.training)
+cars.no.training.tree.pred <- predict(cars.no.training.tree, cars.no.testing)
+head(as.numeric(cars.no.training.tree.pred))
+head(cars.no.testing$km_driven)
+```
+
+```{r}
+#cars.tx.training
+cars.tx.training.tree <- rpart(km_driven ~ year+selling_price+fuel+seller_type+transmission+owner, data = cars.tx.training)
+cars.tx.training.tree.pred <- predict(cars.tx.training.tree, cars.tx.testing)
+head(as.numeric(cars.tx.training.tree.pred)^2)
+head((cars.tx.testing$km_driven)^2)
+```
+
+
+### 8
+(10 pts) Provide an analysis of the 6 models (using their respective testing data sets), including Adjusted R-Squared and RMSE. Which of these models is the best? Why?
+```{r}
+#linear regression cars.df
+prediction.cars.df <- predict(model.cars.df, newdata = cars.testing, type = "response")
+cars.df.rsme <- sqrt(mean((cars.testing$km_driven - prediction.cars.df)^2))
+cars.df.rsme
+```
+
+The rsq is 0.298 and rsme is 36480.
+
+```{r}
+#regression tree cars.df
+tree.cars.df.rsme <- sqrt(mean((cars.testing$km_driven - cars.training.tree.pred)^2))
+tree.cars.df.rsme
+
+#r-squared
+summ <- printcp(cars.training.tree)
+rsq <- 1-summ[,c(3,4)]
+rsq[nrow(rsq),1]
+```
+
+The rsq is 0.341 and the rsme is 36146.
+
+```{r}
+#Linear regression cars.no.df
+prediction.cars.no.df <- predict(model.cars.no.df, newdata = cars.no.testing, type = "response")
+cars.no.df.rsme <- sqrt(mean((cars.no.testing$km_driven - prediction.cars.no.df)^2))
+cars.no.df.rsme
+```
+
+The rsq is 0.4102 and the rsme is 25740.
+
+```{r}
+#regression tree cars.no.df
+tree.cars.no.df.rsme <- sqrt(mean((cars.no.testing$km_driven - cars.no.training.tree.pred)^2))
+tree.cars.no.df.rsme
+
+#r-squared
+summ <- printcp(cars.no.training.tree)
+rsq <- 1-summ[,c(3,4)]
+rsq[nrow(rsq),1]
+```
+
+The rsq is 0.422 and the rsme is 25630.
+
+```{r}
+#linear regression cars.tx
+prediction.cars.tx <- predict(model.cars.tx, newdata = cars.tx.testing, type = "response")
+cars.tx.rsme <- sqrt(mean((cars.tx.testing$km_driven^2 - prediction.cars.tx^2)^2))
+cars.tx.rsme
+```
+
+The rsq is 0.4063 and the rsme is 26807.
+
+```{r}
+#regression tree cars.tx
+tree.cars.tx.df.rsme <- sqrt(mean((cars.tx.testing$km_driven^2 - cars.tx.training.tree.pred^2)^2))
+tree.cars.tx.df.rsme
+
+#r-squared
+summ <- printcp(cars.tx.training.tree)
+rsq <- 1-summ[,c(3,4)]
+rsq[nrow(rsq),1]
+```
+
+The rsq is 0.461 and the rsme is 25650
+
+The regression trees have larger adjusted rsq values than the linear regression models. The tx.df, which had outliers removed and data looked the most normal, regression tree has a low rsme and highest adjusted rsq making it the best model. The worst models are using the cars.df which did not 
+have outliers removed and data was not transformed. 
+
+
+### 9
+(5 pts) Using each of the regression models, what are the predicted odometer readings (km_driven) of a 2004 vehicle that was sold by a dealer for R87,000, has a Diesel engine, a manual transmission, and is second owner? Why are the predictions different?
+```{r}
+#cars.df linear regression
+year <- 2004
+selling_price <- 87000
+fuel <- 2
+seller_type <- 1
+owner <- 3
+
+df <- data.frame(year, selling_price, fuel, seller_type, owner)
+
+#predicted grade using final model 
+p.km.df <- predict(model.cars.df, newdata=df, type="response")
+p.km.df
+```
+
+```{r}
+#cars.df regression tree
+#predicted grade using final model 
+transmission <- 2
+df.tree <- data.frame(year, selling_price, fuel, seller_type, transmission, owner)
+p.km.df.tree <- predict(cars.training.tree, df.tree)
+p.km.df.tree
+```
+
+```{r}
+#cars.no.df linear regression
+#predicted grade using final model 
+p.km.no.df <- predict(model.cars.no.df, newdata=df, type="response")
+p.km.no.df
+```
+
+```{r}
+#cars.no.df regression tree
+df.tree <- data.frame(year, selling_price, fuel, seller_type, transmission, owner)
+p.km.no.df.tree <- predict(cars.no.training.tree, df.tree)
+p.km.no.df.tree
+```
+
+```{r}
+#cars.tx prediction
+year <- 2004
+selling_price <- log(87000)
+fuel <- 2
+seller_type <- 1
+owner <- 3
+
+df.tx <- data.frame(year, selling_price, fuel, seller_type, owner)
+
+#predicted grade using final model 
+p.km.tx <- predict(model.cars.tx, newdata=df.tx, type="response")
+p.km.tx^2
+```
+
+```{r}
+df.tx.tree <- data.frame(year, selling_price, fuel, seller_type, transmission, owner)
+p.km.tx.df.tree <- predict(cars.tx.training.tree, df.tx.tree)
+p.km.tx.df.tree^2
+```
+
+The linear regression predictions are similar to each other and the regression tree predictions are similar to each other. The predictions between the two types of models are pretty far off but are inside the prediction interval in question 10. The regression trees include the transmission variable which could cause differences in the predictions. The data that is transformed and has outliers removed is going to have a different prediction becuase it is a better model. 
+
+
+### 10
+(5 pts) For each of the predictions, calculate the 95% prediction interval for the kilometers driven.
+```{r}
+#cars.df linear regression
+predict(model.cars.df, newdata = df, interval = "prediction")
+```
+
+
+```{r}
+#cars.no.df linear regression
+predict(model.cars.no.df, newdata = df, interval = "prediction")
+```
+
+
+```{r}
+#cars.tx linear regression
+pred_int <- predict(model.cars.tx, newdata = df.tx, interval = "prediction")
+pred_int^2
+```
+
+
+
+
+
+

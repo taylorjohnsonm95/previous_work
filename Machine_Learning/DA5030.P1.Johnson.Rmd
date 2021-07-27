@@ -1,0 +1,490 @@
+---
+title: "Practicum 1 - Taylor Johnson"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caret)
+set.seed(1)
+```
+
+
+## Problem 1 (60 Points) 
+
+### Question 1
+(0 pts) Download the data set UCI Heart Disease.
+```{r}
+heart_data <- read.csv("/Users/taylorjohnson/Downloads/Heart_Disease_Dataset/heart.csv", stringsAsFactors =F)
+```
+
+
+### Question 2
+(1 pts) Explore the data set to get a sense of the data and to get comfortable with it. Use the names file to understand the columns present in the data.
+```{r}
+str(heart_data)
+```
+
+Most of the data are integers and columns that are categorical, such as sex and cp, have been changed to integer type. There is one column that is numeric
+
+```{r}
+summary(heart_data)
+```
+
+```{r}
+#check for NA's
+anyNA(heart_data)
+```
+There are mo missing values
+
+
+
+### Question 3
+(5 pts) Create a histogram of column 5 (Chol) and overlay a normal curve.
+```{r}
+ggplot(heart_data, aes(chol)) +      
+  geom_histogram(aes(y = ..density..)) +
+  stat_function(fun = dnorm,
+                args = list(mean = mean(heart_data$chol),
+                            sd = sd(heart_data$chol)),
+                col = "blue",
+                size = 2) +
+  xlab("serum cholestoral in mg/dl") +
+  ggtitle("Serum Cholesterol of Patients")
+```
+The mean is around 250mg/dl
+
+```{r}
+summary(heart_data$chol)
+```
+The mean and median are off by 6.3 and there is a slight skew
+
+
+
+### Question 4
+(5 pts) Test normality of column 5 by performing either a Shapiro-Wilk (tutorial (Links to an external site.)) or Kolmogorov-Smirnof test. Describe what you found.
+```{r}
+#shapiro walk test
+shapiro.test(heart_data$chol)
+```
+
+The p-value is < 0.05 which indicates that chol data is not normally distributed
+
+
+
+### Question 5
+(5 pts) Identify any outliers for the columns using a z-score deviation approach,i.e., consider any values that are more than 2 standard deviations from the mean as outliers. Which are your outliers for each column? What would you do? Summarize potential strategies in your notebook.
+```{r}
+#Compute z
+numeric_data <- heart_data %>% #outliers are not calculated for categorical variables
+  dplyr::select(age, trestbps, chol, thalach, oldpeak)
+outliers_list <- list() #list of outliers for each column
+for (i in 1:ncol(numeric_data)){
+  z <- abs((mean(numeric_data[ ,i]) - numeric_data[ ,i])/sd(numeric_data[ ,i]))
+  outliers <- numeric_data[which(z > 2), ]
+  outliers_df <- as.data.frame(outliers[ ,i])
+  outliers_list <- c(outliers_list, outliers_df)
+}
+names(outliers_list) <- colnames(numeric_data)
+outliers_list
+```
+
+The columns age, trestbps, chol, thalach and oldpeak all have outliers. Some strategies are to remove outliers or to normalize the data by z-score or min-max.
+
+
+### Question 6
+(3 pts) Normalize all columns using z-score standardization.
+```{r}
+z_std<-function(x){
+  return(abs((mean(x) - x)/sd(x)))
+}
+
+heart_data_n<-as.data.frame(apply(heart_data,2, z_std))
+head(heart_data_n)
+```
+
+
+
+### Question 7
+(4 pts) The data set is sorted, so creating a validation data set requires random selection of elements. Create a stratified sample where you randomly select 15% of each of the cases for each payment type to be part of the validation data set. The remaining cases will form the training data set.
+```{r}
+library(rsample)
+split_strat  <- initial_split(heart_data_n, prop = 0.85, 
+                              strata = "target")
+train_strat  <- training(split_strat)
+val_strat   <- testing(split_strat)
+
+train_target <- train_strat$target
+val_target <- val_strat$target
+
+train_data <- train_strat[, 1:13]
+val_data <- val_strat[, 1:13]
+```
+
+
+
+### Question 8
+(20 pts) Implement the k-NN algorithm in R (do not use an implementation of k-NN from a package) and use your algorithm with a k=5 to predict the chance of heart attack for the following new case:   
+
+age = 50 |  sex = 1 |  cp = 2 |  trestbps = 140 |  chol = 249 |  fbs = 1 |  restecg = 0 |  thalach = 150 |  exang = 1 |  oldpeak = 1.3 |  slope = 1 |  ca = 0 |  thal = 1   
+
+Use only the training data set. Note that you need to normalize the values of the new cases the same way as you normalized the original data. If the data set is too large to handle on your computer, then create a smaller training data set by randomly sampling the original data set. 
+```{r}
+#calculate euclidean dist
+euc_dist <- function(d1, d2){
+  d = 0
+  for(i in c(1:(length(d1)-1) ))
+  {
+    d = d + (d1[[i]]-d2[[i]])^2
+  }
+  d = sqrt(d)
+  return(d)
+}
+
+knn_predict <- function(Train, Test, k){
+  prediction <- c()
+  
+  #loop over test data
+  for(i in c(1:nrow(Test))){   
+    eu_dist =c() 
+    #loop over train data
+    for(j in c(1:nrow(Train))){
+      #calculate euclidean dist between test and train data
+      eu_dist <- c(eu_dist, unlist(euc_dist(Test[i, ], Train[j, ])))
+    }
+    #create dataframe with Target and distances
+    eu <- data.frame(Target=train_target, eu_dist) 
+    #sort dataframe to get top K neighbors
+    eu <- eu[order(eu$eu_dist),] 
+    #dataframe with top K neighbors
+    eu <- eu[1:k,]               
+    
+    #get the target that occurs the most
+    target <- unique(eu$Target)
+    mode <- target[which.max(tabulate(match(eu$Target, target)))]
+  
+    prediction <- c(prediction, mode)
+  }
+  prediction
+}
+```
+
+```{r}
+pred <- knn_predict(train_data, val_data, k=5)
+pred
+```
+
+
+
+```{r}
+#create dataframe with test case 
+test_case <- data.frame(age = 50, sex = 1, cp = 2, trestbps = 140, chol = 249, fbs = 1, restecg = 0, thalach = 150, exang = 1, oldpeak = 1.3, slope = 1, ca = 0, thal = 1, target = NA)
+test_case <- rbind(heart_data, test_case)
+
+#normalize
+z_std<-function(x){
+  return(abs((mean(x) - x)/sd(x)))
+}
+test_case_n<-as.data.frame(apply(test_case,2,z_std))
+
+#create test and train data
+Test <- test_case_n[nrow(test_case_n),]
+Test
+test_case_n <- test_case_n[-nrow(test_case_n), ]
+test_case_n$target <- heart_data_n$target
+head(test_case_n)
+```
+
+
+```{r}
+split_strat  <- initial_split(test_case_n, prop = 0.85, 
+                              strata = "target")
+Train_strat  <- training(split_strat)
+Val_strat   <- testing(split_strat)
+
+#get target column
+Train_target <- Train_strat$target
+Val_target <- Val_strat$target
+
+#remove target column
+Test_ <-Test[, 1:13]
+Train_strat_ <- Train_strat[, 1:13]
+Val_strat_ <-Val_strat[,1:13]
+
+```
+
+
+```{r}
+prediction <- knn_predict(Train_strat_, Test_, k=5)
+prediction
+```
+
+There is > 50% diameter narrowing for this test case
+
+
+### Question 9
+ (7pts) Apply the knn function from the class package with k=5 and redo the cases from Question (11). Compare your answers.
+```{r}
+library(class)
+
+test_pred <- knn(train = Train_strat_, test = Test_,cl = Train_target, k=5)
+head(test_pred)
+```
+
+
+The same answer of > 50% diameter narrowing was given when the class package was used.
+
+```{r}
+#class package confusion matrix
+test_pred <- knn(train = train_data, test = val_data,cl = train_target, k=5)
+confusionMatrix(as.factor(test_pred), as.factor(val_target))
+```
+
+```{r}
+#confusion matrix from knn function 
+confusionMatrix(as.factor(pred), as.factor(val_target))
+```
+
+The class package has a higher accuracy, sensitivity and specificity.
+
+
+### Question 10
+(10 pts) Using kNN from the class package, create a plot of k (x-axis) from 2 to 8 versus accuracy (percentage of correct classifications) using ggplot. 
+```{r}
+set.seed(1)
+accuracy <- c()
+for (i in 2:8){
+  test_pred <- knn(train = train_data, test = val_data,cl = train_target, k=i)
+  cm <- confusionMatrix(as.factor(test_pred), as.factor(val_target))
+  acc <- as.numeric(cm$overall[1])
+  accuracy <- c(accuracy, acc)
+}
+accuracy <- as.data.frame(accuracy)
+accuracy$k <- c("2", "3", "4", "5", "6", "7", "8")
+```
+
+
+```{r}
+#plot k vs accuracy
+ggplot(accuracy, aes(x=k, y=accuracy, group=1)) +
+  geom_line()
+```
+
+When k=4 the accuracy when using the class package is lowest
+
+
+
+## Problem 2 (40 Points) 
+
+### Question 1
+(0 pts) Investigate the Diamond (Links to an external site.) data from the ggplot2 library.
+```{r}
+diamonds_data <- diamonds
+str(diamonds_data)
+```
+
+```{r}
+anyNA(diamonds_data)
+```
+There are no missing values
+
+
+
+### Question 2
+(3 pts) Save the price column in a separate vector/data frame called target_data. Move all the remaining columns into a new data frame called train_data.
+```{r}
+target_data <-diamonds_data$price
+train_data <- diamonds_data[ , -7]
+```
+
+
+
+### Question 3
+(2 pts) Encode all categorical columns and Normalize all the columns in train_data using min-max normalization. 
+```{r}
+#change factors to numeric
+train_data <- train_data %>% mutate(across(where(is.factor), as.numeric))
+str(train_data)
+```
+All columns have been changed to numeric
+
+```{r}
+#normalize data
+#create function
+normalize <- function(x) {
+return ((x - min(x)) / (max(x) - min(x))) }
+#normalize numeric data
+train_data_n <- as.data.frame(lapply(train_data, normalize))
+head(train_data_n)
+```
+All columns have been normalized
+
+
+
+### Question 4
+(15 pts) Build a function called knn.reg that implements a regression version of kNN that averages the prices of the k nearest neighbors using a weighted average where the weight is 3 for the closest neighbor, 2 for the second closest and 1 for the remaining neighbors (recall that a weighted average requires that you divide the sum product of the weight and values by the sum of the weights).
+It must use the following signature: 
+
+knn.reg (new_data, target_data, train_data, k) 
+
+where new_data is a data frame with new cases, target_data is a data frame with a single column of prices from (2), train_data is a data frame with the features from (2) that correspond to a price in target_data, and k is the number of nearest neighbors to consider. It must return the predicted price.
+```{r}
+library(flexclust)
+#calculate euclidean dist
+euc_dist <- function(d1, d2){
+  d = 0
+  for(i in c(1:(length(d1)-1) ))
+  {
+    d = d + (d1[[i]]-d2[[i]])^2
+  }
+  d = sqrt(d)
+  return(d)
+}
+
+knn.reg <- function(new_data, target_data, train_data, k){
+  forecast <- c()
+  #loop over new data
+  for(i in c(1:nrow(new_data))){   
+    eu_dist =c() 
+    #loop over train data
+    for(j in c(1:nrow(train_data))){
+      #calculate euclidean dist between new and train data
+      eu_dist <- c(eu_dist, unlist(euc_dist(new_data[i, ], train_data[j, ])))
+    }
+    #create dataframe with price and distances
+    eu <- data.frame(price=target_data, eu_dist) 
+    #sort dataframe to get top K neighbors
+    eu <- eu[order(eu$eu_dist),] 
+    #dataframe with top K neighbors
+    eu <- eu[1:k,]               
+
+    #add weights to k nearest neighbors
+    w <- rep(1, k)
+    w[1] <- 3
+    w[2] <- 2
+    #compute weighted average
+    wa <- sum(w* eu$price)/sum(w)
+    forecast <- c(forecast, wa)
+    } 
+  forecast
+}
+
+```
+
+
+
+### Question 5
+(4 pts) Forecast the price of this new diamond using your regression kNN using k = 5: 
+carat = 0.63 | cut = Premium | color = E | clarity = VS2 | 
+depth = 59.2 | table = 59.0 | x = 5.86 | y = 5.83 | z = 3.46
+```{r}
+#bind data with diamond data
+new_data <- data.frame(carat = 0.63, cut = "Premium", color= "E", clarity = "VS2", depth = 59.2, table = 59.0, x = 5.86, y = 5.83, z = 3.46)
+new_data_bind <- rbind(diamonds_data[ ,-7], new_data)
+new_data_bind <- new_data_bind %>% mutate(across(where(is.factor), as.numeric))
+
+#normalize
+new_data_n<-as.data.frame(apply(na.omit(new_data_bind),2, normalize))
+head(new_data_n)
+
+#remove last row 
+new_data <- new_data_n[nrow(new_data_n), ]
+data_n <- new_data_n[-nrow(new_data_n), ]
+```
+
+
+```{r}
+#forecast price of new diamond
+forecast = knn.reg(new_data, target_data, train_data, 5)
+forecast
+```
+
+
+### Question 6
+(5 pts) Calculate the Mean Squared Error (MSE) using a random sample of 10% of the data set as test data.
+```{r}
+#get 10% of data
+data_n$price <- diamonds_data$price #add price column
+rsample <- sample.int(n = nrow(data_n), size = floor(.1*nrow(data_n)), replace = F) #take sample
+train_data <- data_n[rsample, ] 
+rsample <- sample.int(n = nrow(train_data), size = floor(.1*nrow(train_data)), replace = F) #take sample
+new_data <- train_data[rsample, ]
+
+#get target data
+target_data <-train_data$price
+price_new_data <- new_data$price
+
+#remove price
+train_data <- train_data[ , -10]
+new_data <- new_data[ ,-10]
+```
+
+
+```{r}
+forecast = knn.reg(new_data, target_data, train_data, 5)
+head(forecast)
+```
+
+
+```{r}
+#calculate MSE
+error <- price_new_data - forecast
+MSE <- mean(as.numeric(lapply(error, function(x) {x**2})))
+MSE
+```
+
+
+
+## Problem 3 (10 Points) 
+
+### Question 1 
+(0 pts) Download and Extract the data set of Home prices of Kings County (USA)
+```{r}
+house_data <- read.csv("/Users/taylorjohnson/Downloads/kc_house_data.csv", stringsAsFactors =F)
+```
+
+
+
+### Question 2
+(3 pts) Build a new data frame with the four columns: tper, year, month, avg_price_sq_ft where tper is the time period starting at 1 (e.g., 1, 2, 3, 4, ...), year and month are the year and month of the sale of a property extracted from the column date and avg_price_sq_ft is the average price per square foot of living space for all properties sold that month. The data set should contain the sales in order from least recent to most recent, i.e., the first column after the header column should be the property sold the furthest in the past.
+```{r}
+house_data_new <- house_data %>%
+  mutate(year = gsub("(^\\d{4}).*", "\\1", house_data$date)) %>%
+  mutate(month = gsub("(^[0-9]{4})(\\d{2}).*", "\\2", house_data$date)) %>%
+  group_by(month, year) %>%
+  summarize(avg_price_sq_ft = mean(price/sqft_living)) %>%
+  arrange(year, month)  %>%
+  select(year, month, avg_price_sq_ft)
+house_data_new$tper <- seq.int(nrow(house_data_new))
+head(house_data_new)
+```
+
+
+### Question 3
+(3 pts) Plot the average sales price per month as a time series line graph.
+```{r}
+months <- as.character(house_data_new$month)
+ggplot(house_data_new, aes(tper, avg_price_sq_ft)) +
+  geom_line() +
+  xlab("Month from 2014 to 2015") +
+  ylab("Avergage sales price") +
+  ggtitle("The average sales price of properties sold each month ") +
+  scale_x_discrete(limits= months)
+```
+
+The average price dips after 10/2014 and then increases after 12/2014 and reaches the highest average price in 05/2015.
+
+
+### Question 4
+(6 pts) Forecast the average sales price for the next month is the time series using a weighted moving average of the most recent 3 months with weights of 4, 3, and 1. 
+```{r}
+w <- c(1,3,4)
+house_filt <- house_data_new[11:13,]
+wa <- sum(w* house_filt$avg_price_sq_ft)/sum(w)
+wa
+```
+
+The average price forecast for the next month is $280.94
+
+
