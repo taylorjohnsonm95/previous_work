@@ -4,7 +4,7 @@
 
 # Methods
 ## Reference-guided and De novo assembly of RNA-Seq data
-Read alignments produced from RNA-Sequencing are used to build two types of Transcriptomes. One is reference-guided and one is de novo. Trinity [1] will be used for both types of assemblies. The 25 paired reads used for the alignment were trimmed based on quality score and adapter sequences. A GMAP database was created to align and sort the trimmed files. The alignments were indexed so that programs can search the reads faster.
+Read alignments produced from RNA-Sequencing are used to build two types of Transcriptomes. One is reference-guided and one is de novo. Trinity [1] will be used for both types of assemblies. The 25 paired reads used for the alignment were trimmed based on quality score and adapter sequences. A GMAP database was created to align the trimmed files. The alignments were sorted and indexed.
 For the reference-guided assembly, sorted bam files were merged to a single bam file using samtools [2].  Trinity used this file to assemble a genome-guided Transcriptome as a fasta file in the output directory. TrinityStats was used to view the size of the assembled contigs and length distribution of the assembly.
 De novo assembly required a list of files for left and right reads.  After running Trinity the output fasta files was directed to a new directory. TrinityStats was used again to view length and contig information. 
 
