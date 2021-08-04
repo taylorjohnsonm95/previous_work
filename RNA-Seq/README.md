@@ -2,6 +2,42 @@
 
 ## Taylor Johnson
 
+# Scripts
+
+trimAll.sh
+trims reads by quality score and removes adapters 
+
+AipBuild.sh
+Build GMAP database 
+
+buildIIT.sh
+Index intron splice sites so align reads across introns and not within them 
+
+alignAll.sh
+Align reads against GMAP database with GSNAP
+
+sortAll.sh
+Convert to sorted BAM file 
+
+indexAll.sh
+Create index from BAM file
+
+mergeAll.sh
+Merge all BAM files into one file
+
+runTrinity.sh
+Assemble the transcriptome
+
+analyzeTrinity.sh
+Get contig stats
+
+trinityDenNovo.sh
+de-novo assembly
+
+analyzeTrinityDeNovo.sh
+Get contig stats
+
+
 # Methods
 ## Reference-guided and De novo assembly of RNA-Seq data
 Read alignments produced from RNA-Sequencing are used to build two types of Transcriptomes. One is reference-guided and one is de novo. Trinity [1] will be used for both types of assemblies. The 25 paired reads used for the alignment were trimmed based on quality score and adapter sequences. A GMAP database was created to align the trimmed files. The alignments were sorted and indexed.
