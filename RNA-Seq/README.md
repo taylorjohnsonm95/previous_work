@@ -5,36 +5,47 @@
 # Scripts
 
 trimAll.sh
+
 trims reads by quality score and removes adapters 
 
 AipBuild.sh
+
 Build GMAP database 
 
 buildIIT.sh
+
 Index intron splice sites so align reads across introns and not within them 
 
 alignAll.sh
+
 Align reads against GMAP database with GSNAP
 
 sortAll.sh
+
 Convert to sorted BAM file 
 
 indexAll.sh
+
 Create index from BAM file
 
 mergeAll.sh
+
 Merge all BAM files into one file
 
 runTrinity.sh
+
 Assemble the transcriptome
 
 analyzeTrinity.sh
+
 Get contig stats
 
 trinityDenNovo.sh
+
 de-novo assembly
 
 analyzeTrinityDeNovo.sh
+
 Get contig stats
 
 
