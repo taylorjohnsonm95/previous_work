@@ -33,4 +33,4 @@ Aligns predicted proteins to swissprot
 ## Methods
 
 BLAST is a tool used to find regions of similarity between sequences. Similarity allows inferences to be made about structure and function of unknown sequences. 
-Transdecoder is a protein prediction program to identify predicted proteins with mRNA sequences and uses protein domains from hmmscan as an input.
+Transdecoder is a protein prediction program to identify predicted proteins with mRNA sequences and uses protein domains from hmmscan and blast hits as inputs.
