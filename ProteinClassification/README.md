@@ -6,6 +6,7 @@ Removes * character and outputs first 500 lines to proteins.fasta
 
 
 runIPS.sh
+
 Runs interproscan with proteins.fasta as input and produces proteins.tsv
 
 
