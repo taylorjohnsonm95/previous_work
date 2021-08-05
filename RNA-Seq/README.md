@@ -1,6 +1,3 @@
-# Transcriptome Assembly 
-
-## Taylor Johnson
 
 # Scripts
 
