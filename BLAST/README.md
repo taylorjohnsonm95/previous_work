@@ -25,6 +25,11 @@ predictProteins.sh
 Predicts proteins
 
 
+alignPredicted.sh
+
+Aligns predicted proteins to swissprot
+
+
 ## Methods
 
 BLAST is a tool used to find regions of similarity between sequences. Similarity allows inferences to be made about structure and function of unknown sequences. 
