@@ -1,0 +1,379 @@
+---
+title: "Practicum 3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(1234)
+library(tidyverse)
+library(caret)
+library(neuralnet)
+library(kernlab)
+library(stats)
+library(psych)
+library(cluster) 
+library(ggplot2)
+library(useful)
+```
+
+
+### Problem 1 (60 pts)
+
+### Question 1
+(0 pts) Download the data set on customer credit data (german_credit_data_dataset.csv   download / source (Links to an external site.)). The description of each column can be found in the data set explanation below.
+```{r}
+credit_data <- read.csv("/Users/taylorjohnson/Downloads/german_credit_data_dataset.csv")
+```
+
+
+### Question 2
+(0 pts) Build an R Notebook named DA5030.P3.LastName.Rmd, where LastName is your last name.
+
+
+### Question 3
+(0 pts) Explore the data set as you see fit and that allows you to get a sense of the data and get comfortable with it.
+```{r}
+str(credit_data)
+```
+
+There are 1000 rows of data and 21 variables
+
+```{r}
+anyNA(credit_data)
+```
+
+There is no missing data
+
+```{r}
+#Number of customer type
+table(credit_data$customer_type)
+```
+
+700 of good customer type and 300 bad customer type
+
+
+### Question 4
+(10 pts) Encode the categorical variables using one-hot encoding. You must do this manually and may not rely on model functions. You may choose a subset of variables. You may simplify the data set by eliminating up to four categorical features. You may also simplify the category levels for checking_account_status and present_employment to Boolean. Others you may reduce the number of levels.
+```{r}
+newdata <- credit_data %>%
+  mutate(checking_account_statusA11 = ifelse(checking_account_status == "A11", 1, 0),
+         checking_account_statusA12 = ifelse(checking_account_status == "A12", 1, 0),
+         checking_account_statusA13 = ifelse(checking_account_status == "A13", 1, 0),
+         checking_account_statusA14 = ifelse(checking_account_status == "A14", 1, 0),
+         credit_historyA30 = ifelse(credit_history == "A30", 1, 0),
+         credit_historyA31 = ifelse(credit_history == "A31", 1, 0),
+         credit_historyA32 = ifelse(credit_history == "A32", 1, 0),
+         credit_historyA33 = ifelse(credit_history == "A33", 1, 0),
+         credit_historyA34 = ifelse(credit_history == "A34", 1, 0),
+         purposeA40 = ifelse(purpose == "A40", 1, 0),
+         purposeA41 = ifelse(purpose == "A41", 1, 0),
+         purposeA410 = ifelse(purpose == "A410", 1, 0),
+         purposeA42 = ifelse(purpose == "A42", 1, 0),
+         purposeA43 = ifelse(purpose == "A43", 1, 0),
+         purposeA44 = ifelse(purpose == "A44", 1, 0),
+         purposeA45 = ifelse(purpose == "A45", 1, 0),
+         purposeA46 = ifelse(purpose == "A46", 1, 0),
+         purposeA48 = ifelse(purpose == "A48", 1, 0),
+         purposeA49 = ifelse(purpose == "A49", 1, 0),
+         savingsA61 = ifelse(savings == "A61", 1, 0),
+         savingsA62 = ifelse(savings == "A62", 1, 0),
+         savingsA63 = ifelse(savings == "A63", 1, 0),
+         savingsA64 = ifelse(savings == "A64", 1, 0),
+         savingsA65 = ifelse(savings == "A65", 1, 0),
+         present_employmentA71 = ifelse(present_employment == "A71", 1, 0),
+         present_employmentA72 = ifelse(present_employment == "A72", 1, 0),
+         present_employmentA73 = ifelse(present_employment == "A73", 1, 0),
+         present_employmentA74 = ifelse(present_employment == "A74", 1, 0),
+         present_employmentA75 = ifelse(present_employment == "A75", 1, 0),
+         personalA91 = ifelse(personal == "A91", 1, 0),
+         personalA92 = ifelse(personal == "A92", 1, 0),
+         personalA93 = ifelse(personal == "A93", 1, 0),
+         personalA94 = ifelse(personal == "A94", 1, 0),
+         other_debtorsA101 = ifelse(other_debtors == "A101", 1, 0),
+         other_debtorsA102 = ifelse(other_debtors == "A102", 1, 0),
+         other_debtorsA103 = ifelse(other_debtors == "A103", 1, 0),
+         propertyA121  = ifelse(property == "A121", 1, 0),
+         propertyA122  = ifelse(property == "A122", 1, 0),
+         propertyA123  = ifelse(property == "A123", 1, 0),
+         propertyA124  = ifelse(property == "A124", 1, 0),
+         other_installment_plansA141  = ifelse(other_installment_plans == "A141", 1, 0),
+         other_installment_plansA142  = ifelse(other_installment_plans == "A142", 1, 0),
+         other_installment_plansA143  = ifelse(other_installment_plans == "A143", 1, 0),
+         housingA151  = ifelse(housing == "A151", 1, 0),
+         housingA152  = ifelse(housing == "A152", 1, 0),
+         housingA153  = ifelse(housing == "A153", 1, 0),
+         jobA171  = ifelse(job == "A171", 1, 0),
+         jobA172  = ifelse(job == "A172", 1, 0),
+         jobA173  = ifelse(job == "A173", 1, 0),
+         jobA174  = ifelse(job == "A174", 1, 0),
+         telephoneA191  = ifelse(telephone == "A191", 1, 0),
+         telephoneA192  = ifelse(telephone == "A192", 1, 0),
+         foreign_workerA201  = ifelse(foreign_worker == "A201", 1, 0),
+         foreign_workerA202  = ifelse(foreign_worker == "A202", 1, 0)) %>%
+  dplyr::select(-checking_account_status, -credit_history, -purpose, -savings, -present_employment, -personal, -other_debtors, -property, 
+                -other_installment_plans, -housing, -job, -telephone, -foreign_worker)
+str(newdata)
+```
+
+```{r}
+#normalize data 
+normalize <- function(x) {
+    return((x - min(x)) / (max(x) - min(x)))
+  }
+
+newdata_norm <- as.data.frame(lapply(newdata, normalize))
+str(newdata_norm)
+```
+
+
+
+### Question 5
+(20 pts) Build a classification model using an artificial neural networks (ANN) that predicts if a customer has a good or bad credit risk (column customer_type). Use one hidden layer and try to optimize number of hidden neurons in your ANN. Now build a support vector machines (SVM) classifier and compare your results. You may choose the package for the ANN and SVM implementation.
+```{r}
+#partition  into 75% training and 25% testing 
+split_data <- createDataPartition(newdata_norm$customer_type, p = 0.75, 
+                               list = FALSE)
+credit_train <- newdata_norm[split_data, ]
+credit_test  <- newdata_norm[-split_data, ]
+```
+
+```{r}
+table(credit_test$customer_type)
+```
+
+```{r}
+#ANN
+set.seed(1234)
+ann_model <- neuralnet(customer_type ~ ., data = credit_train, hidden=1)
+```
+
+```{r}
+#predict using test data
+model_results <- compute(ann_model, credit_test[-8])
+predicted_customer <- model_results$net.result
+head(predicted_customer)
+```
+
+```{r}
+ann_prediction<-factor(ifelse(predicted_customer<0.5, 0, 1))
+```
+
+```{r}
+confusionMatrix(as.factor(ann_prediction), as.factor(credit_test$customer_type))
+```
+
+0 is good customer type, 1 is bad customer type. A good model should have low false positives since it is worse to have bad customers that are being predicted as good customers. When there is only one neuron the number of false positives is the lowest and the accuracy and sensitivity are relatively high. 
+
+
+
+```{r}
+#SVM
+set.seed(1234)
+svm_model <- ksvm(customer_type ~ ., data = credit_train,
+                            kernel = "rbfdot")
+```
+
+```{r}
+#predict
+svm_predictions <- predict(svm_model, credit_test)
+```
+
+```{r}
+svm_prediction<-factor(ifelse(svm_predictions<0.5, 0, 1))
+```
+
+```{r}
+confusionMatrix(as.factor(svm_prediction), as.factor(credit_test$customer_type))
+```
+
+The svm model has a higher amount of false positives which means that bad customers are being predicted as good customers. The number of false negatives is a lot lower but in this example the false positives are more costly. 
+
+
+### Question 6
+(20 pts) Build another classification model using ANN that predicts if a bank customer have more than 500 DM in their savings using the other features. Again, compare the results with SVM (please make sure to use accuracy, precision, and recall for comparing the models in each of the part 5 and 6. See this article (Links to an external site.) to understand how to calculate these metrics or consult chapter 10 in the text book).
+```{r}
+#partition into 75% training and 25% testing 
+split_data <- createDataPartition(newdata_norm$savingsA63, p = 0.75, 
+                               list = FALSE)
+credit_train_s <- newdata_norm[split_data, ]
+credit_test_s  <- newdata_norm[-split_data, ]
+```
+
+```{r}
+table(credit_test_s$savingsA63)
+```
+
+```{r}
+#ANN
+set.seed(1234)
+ann_model <- neuralnet(savingsA63 ~ ., data = credit_train_s, hidden=1)
+```
+
+```{r}
+#predict
+model_results <- compute(ann_model, credit_test_s[, -30])
+predicted_customer <- model_results$net.result
+```
+
+```{r}
+ann_prediction<-factor(ifelse(predicted_customer<0.5, 0, 1))
+```
+
+```{r}
+confusionMatrix(as.factor(ann_prediction), as.factor(credit_test_s$savingsA63))
+```
+
+This model has 100% accuracy and was able to correctly classify whether a customer had more than 500 DM in their savings.
+
+
+```{r}
+#SVM
+set.seed(1234)
+svm_model <- ksvm(savingsA63 ~ ., data = credit_train_s,
+                            kernel = "rbfdot")
+```
+
+```{r}
+#predict
+svm_predictions <- predict(svm_model, credit_test_s)
+```
+
+```{r}
+svm_prediction<-factor(ifelse(svm_predictions<0.5, 0, 1))
+```
+
+```{r}
+confusionMatrix(as.factor(svm_prediction) ,as.factor(credit_test_s$savingsA63))
+```
+
+This model had classified all 14 customers who had less than 500DM in their savings as those who have more and resulted in a high amount of false positives. 
+
+
+### Question 7
+(10 pts) what are some of the insights that you learned after completing part 5 and 6? which target variable (customer_type or savings) was easier to predict for each of the algorithms? which algorithm was faster to train?
+```
+ANN got better results when classifying both the customer type and savings. The number of false positives was lower which was important for this example. The accuracy was pretty close for customer type but better for savings when using the ann model. The ann model took longer to train but I like that the number of hidden layers and neurons can be changed to optimize the model even though for me both variables had the best result with only 1 neuron. For svm, I was able to change the kernel type but I did not think this improved the model that much and would like to learn more about how to optimize this model. 
+```
+
+
+
+### Question 8
+(6 bonus pts) Optional: Use a decision tree ensemble algorithm of your choice (e.g. bagging, boosting or random forest) to predict the customer_type. Compare the result with the ANN and SVM results in part 5 (you may refer to chapter 11 of your text book, Improving Model Performance, for more info on ensemble learning).
+```{r}
+#boosting decision tree model
+library(adabag)
+credit_train$customer_type <- as.factor(credit_train$customer_type)
+myboost <- adabag::boosting(customer_type ~ ., data=credit_train, boos=TRUE)
+credit_pred_boost <- predict(myboost, credit_test)
+confusionMatrix(as.factor(credit_pred_boost$class), as.factor(credit_test$customer_type))
+```
+
+The accuracy, sensitivity and kappa are all higher for the decision tree ensemble compared to the ANN model. The number of false positives are still higher than the ANN model. The kappa, number of false positives and specificity are improved in this model compared to the SVM model. 
+
+
+
+
+### Problem 2 (40 pts)
+
+### Question 1
+(0 pts) Download this data set on Whole Sale Customers (Links to an external site.).
+```{r}
+wholesale_data <- read.csv("/Users/taylorjohnson/Downloads/Wholesale_customers_data.csv")
+str(wholesale_data)
+```
+
+```{r}
+anyNA(wholesale_data)
+```
+
+```{r}
+summary(wholesale_data)
+```
+
+
+### Question 2
+(40 pts) Using an implementation of your choice of the k-means algorithm, determine clusters that may exist. Define 3, 4, and 5 clusters. What K do you think would result in the best clusters? What are some of the characteristics of the determined clusters? How would you label them?
+```{r}
+#boxplot of annual spending for products 
+wholesale_pivot <- pivot_longer(wholesale_data[3:8], cols=c("Fresh", "Milk","Grocery", "Frozen", "Detergents_Paper", "Delicassen"), values_to = "Annual_Spending")
+ggplot(wholesale_pivot, aes(x=name,y=Annual_Spending, group=name, fill=name)) +
+  geom_boxplot() +
+  xlab("Item") +
+  ggtitle("Annual Spending of Items")
+```
+
+Fresh and Grocery have high annual spending while Delicassen and Frozen are low.
+
+```{r}
+#normalize data with scale function
+wholesale_data_n <- as.data.frame(lapply(wholesale_data, scale))
+```
+
+```{r, fig.width=10}
+#correlation of features
+pairs.panels(wholesale_data_n)
+```
+
+Fresh has high correlation with frozen and delicassen. Milk has high correlation with grocery, detergents and delicassen
+
+```{r}
+#kmeans with 3 clusters
+cluster_3 <- kmeans(wholesale_data_n, 3)
+```
+
+```{r}
+plot(cluster_3, wholesale_data_n)
+```
+
+
+```{r}
+cluster_4 <- kmeans(wholesale_data_n, 4)
+```
+
+
+```{r}
+plot(cluster_4, wholesale_data_n)
+```
+
+```{r}
+cluster_5 <- kmeans(wholesale_data_n, 5)
+```
+
+```{r}
+plot(cluster_5, wholesale_data_n)
+```
+
+```{r}
+#Finding the optimal number of clusters
+#set.seed(12345)
+# Compute and plot wss for k = 1 to k = 10.
+k.max <- 10
+data <- wholesale_data_n
+wss <- sapply(1:k.max,function(k){kmeans(data, k, nstart=25)$tot.withinss})
+wss
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+When k=4 the between_ss and total_ss ratio is changing slowly compared to other K's and looks to be the best choice. The PCA plot also shows the best separation when k=4.
+
+
+```{r}
+wholesale_data_n %>%
+  mutate(Cluster = cluster_4$cluster) %>%
+  group_by(Cluster) %>%
+  summarise_all("mean")
+```
+
+```
+CHANNEL: Horeca (Hotel/Restaurant/Caf) or Retail channel
+REGION: Lisbon, Oporto or Other 
+
+cluster 1: Retail, Oporto and Region is mixture of Other and Oporto: Above average annual spending of milk, grocery, detergent, below average spending of fresh and frozen
+cluster 2: Mostly Retail and some Horeca, Region is mixture of Oporto and Other: High annual spending of milk, grocery, detergents and delicassen, above average spending of fresh and frozen
+cluster 3: Horeca, Region is Oporto and Other: Below average annual spending of all items 
+cluster 4: Mostly Horeca and some Retail, Region is mostly Other and some Oporto: Above average annual spending of fresh and frozen, below average spending of milk, grocery and detergents 
+```
