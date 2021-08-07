@@ -18,6 +18,6 @@ Aligns samples with bowtie2, sorts, indexes and removes duplicates
 
 bin.sh
 
-Bins alignments with vamb and uses depth as input
+Bins concatenated assembly with vamb and uses depth as input
 
 
